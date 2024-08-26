@@ -94,12 +94,13 @@
             predictButton.disabled = true; // Disable the button during prediction
             resultDiv.innerText = 'Predicting...';
 
-            // Preprocess the image
-            const tensorImg = tf.browser.fromPixels(uploadedImage)
-                .resizeNearestNeighbor([224, 224]) // Resize to the input size expected by the model
-                .toFloat()
-                .expandDims(0)
-                .div(tf.scalar(255));
+         // Preprocess the image
+const tensorImg = tf.browser.fromPixels(uploadedImage)
+    .resizeNearestNeighbor([150, 150]) // Resize to 150x150, which is the input size expected by the model
+    .toFloat()
+    .expandDims(0)
+    .div(tf.scalar(255));
+
 
             // Make the prediction
             const predictions = await model.predict(tensorImg).data();
