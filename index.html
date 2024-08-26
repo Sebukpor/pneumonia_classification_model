@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAS medhub - Pneumonia Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        h1 {
+            color: orange;
+            display: inline;
+        }
+        h1 span {
+            color: green;
+        }
+        input[type="file"] {
+            margin: 20px 0;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>DAS <span>medhub</span></h1>
+    </header>
+
+    <h2>Pneumonia Detection using Chest X-ray</h2>
+
+    <input type="file" id="imageUpload" accept="image/*">
+    <br>
+    <img id="selectedImage" src="#" alt="Selected Image" style="display:none;"/>
+    <div class="result" id="result"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script>
+        let model;
+        async function loadModel() {
+            model = await tf.loadLayersModel('model/model.json');
+            console.log("Model loaded successfully.");
+        }
+
+        loadModel();
+
+        const imageUpload = document.getElementById('imageUpload');
+        const selectedImage = document.getElementById('selectedImage');
+        const resultDiv = document.getElementById('result');
+
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedImage.src = e.target.result;
+                    selectedImage.style.display = 'block';
+                    predictImage(selectedImage);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        async function predictImage(imageElement) {
+            const img = tf.browser.fromPixels(imageElement).resizeNearestNeighbor([224, 224]).toFloat().expandDims();
+            const prediction = await model.predict(img).data();
+
+            let resultText = prediction[0] > 0.5 ? "Pneumonia Detected" : "No Pneumonia Detected";
+            resultDiv.innerHTML = `Prediction: ${resultText}`;
+        }
+    </script>
+</body>
+</html>
