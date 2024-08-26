@@ -1,86 +1,118 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DAS medhub - Pneumonia Detection</title>
+    <title>Pneumonia Detection - DAS medhub</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            padding: 20px;
+            margin: 20px;
         }
-        header {
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-        }
+
         h1 {
-            color: orange;
+            color: #FFA500; /* Orange for DAS */
             display: inline;
         }
+
         h1 span {
-            color: green;
+            color: #008000; /* Green for medhub */
         }
-        input[type="file"] {
-            margin: 20px 0;
-        }
-        img {
-            max-width: 100%;
-            height: auto;
-        }
-        .result {
+
+        #image-container {
             margin-top: 20px;
-            font-size: 20px;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 1.5em;
             font-weight: bold;
+        }
+
+        #predict-button {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #predict-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>DAS <span>medhub</span></h1>
-    </header>
+    <h1>DAS <span>medhub</span></h1>
+    <h2>Pneumonia Detection using Chest X-Ray Images</h2>
 
-    <h2>Pneumonia Detection using Chest X-ray</h2>
+    <input type="file" id="image-upload" accept="image/*">
+    <button id="predict-button" onclick="predict()">Predict</button>
 
-    <input type="file" id="imageUpload" accept="image/*">
-    <br>
-    <img id="selectedImage" src="#" alt="Selected Image" style="display:none;"/>
-    <div class="result" id="result"></div>
+    <div id="image-container">
+        <img id="uploaded-image" src="#" alt="Uploaded Image" style="max-width: 300px; display: none;">
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <div id="result"></div>
+
     <script>
         let model;
+
         async function loadModel() {
-            model = await tf.loadLayersModel('model/model/model.json');
-            console.log("Model loaded successfully.");
+            model = await tf.loadGraphModel('model/model/model.json');
+            console.log('Model loaded');
         }
 
         loadModel();
 
-        const imageUpload = document.getElementById('imageUpload');
-        const selectedImage = document.getElementById('selectedImage');
+        const imageUpload = document.getElementById('image-upload');
+        const uploadedImage = document.getElementById('uploaded-image');
+        const predictButton = document.getElementById('predict-button');
         const resultDiv = document.getElementById('result');
 
         imageUpload.addEventListener('change', (event) => {
             const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    selectedImage.src = e.target.result;
-                    selectedImage.style.display = 'block';
-                    predictImage(selectedImage);
-                }
-                reader.readAsDataURL(file);
-            }
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                uploadedImage.src = e.target.result;
+                uploadedImage.style.display = 'block';
+                predictButton.style.display = 'inline-block'; // Show the predict button
+            };
+
+            reader.readAsDataURL(file);
         });
 
-        async function predictImage(imageElement) {
-            const img = tf.browser.fromPixels(imageElement).resizeNearestNeighbor([224, 224]).toFloat().expandDims();
-            const prediction = await model.predict(img).data();
+        async function predict() {
+            predictButton.disabled = true; // Disable the button during prediction
+            resultDiv.innerText = 'Predicting...';
 
-            let resultText = prediction[0] > 0.5 ? "Pneumonia Detected" : "No Pneumonia Detected";
-            resultDiv.innerHTML = `Prediction: ${resultText}`;
+            // Preprocess the image
+            const tensorImg = tf.browser.fromPixels(uploadedImage)
+                .resizeNearestNeighbor([224, 224]) // Resize to the input size expected by the model
+                .toFloat()
+                .expandDims(0)
+                .div(tf.scalar(255));
+
+            // Make the prediction
+            const predictions = await model.predict(tensorImg).data();
+            const result = predictions[0] > 0.5 ? 'Pneumonia' : 'Normal';
+
+            // Display the result
+            resultDiv.innerText = `Prediction: ${result}`;
+            predictButton.disabled = false; // Enable the button again
+        }
+    </script>
+</body>
+</html>
+
         }
     </script>
 </body>
