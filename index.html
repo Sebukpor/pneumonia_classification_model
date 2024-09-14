@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -23,6 +23,16 @@
 
         #image-container {
             margin-top: 20px;
+            display: flex;
+            justify-content: center; /* Center the image horizontally */
+            align-items: center; /* Center the image vertically */
+            min-height: 500px; /* Minimum height to make the container larger */
+        }
+
+        #uploaded-image {
+            max-width: 80%; /* Large enough to analyze but will scale based on the view */
+            max-height: 500px; /* Maximum height of the image */
+            display: none; /* Hide until image is uploaded */
         }
 
         #result {
@@ -57,7 +67,7 @@
     <button id="predict-button" onclick="predict()">Predict</button>
 
     <div id="image-container">
-        <img id="uploaded-image" src="#" alt="Uploaded Image" style="max-width: 300px; display: none;">
+        <img id="uploaded-image" src="#" alt="Uploaded Image">
     </div>
 
     <div id="result"></div>
@@ -94,13 +104,12 @@
             predictButton.disabled = true; // Disable the button during prediction
             resultDiv.innerText = 'Predicting...';
 
-         // Preprocess the image
-const tensorImg = tf.browser.fromPixels(uploadedImage)
-    .resizeNearestNeighbor([150, 150]) // Resize to 150x150, which is the input size expected by the model
-    .toFloat()
-    .expandDims(0)
-    .div(tf.scalar(255));
-
+            // Preprocess the image
+            const tensorImg = tf.browser.fromPixels(uploadedImage)
+                .resizeNearestNeighbor([150, 150]) // Resize to 150x150, which is the input size expected by the model
+                .toFloat()
+                .expandDims(0)
+                .div(tf.scalar(255));
 
             // Make the prediction
             const predictions = await model.predict(tensorImg).data();
@@ -109,11 +118,6 @@ const tensorImg = tf.browser.fromPixels(uploadedImage)
             // Display the result
             resultDiv.innerText = `Prediction: ${result}`;
             predictButton.disabled = false; // Enable the button again
-        }
-    </script>
-</body>
-</html>
-
         }
     </script>
 </body>
