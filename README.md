@@ -1,9 +1,6 @@
-# pneumonia_detection_model
+# Pneumonia Classification using Chest X-Ray Images
 
-
-# Pneumonia Detection using Chest X-Ray Images
-
-This project is a Pneumonia Detection system that uses a deep learning model to classify chest X-ray images into Pneumonia and Normal categories. The model is built using TensorFlow and Keras and can be deployed on the web using TensorFlow.js.
+This project is a Pneumonia Classification system that uses a deep learning model to classify chest X-ray images into Pneumonia and Normal categories. The model is built using TensorFlow and Keras and can be deployed on the web using TensorFlow.js.
 
 ## Project Overview
 
