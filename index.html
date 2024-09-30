@@ -115,8 +115,8 @@
             const predictions = await model.predict(tensorImg).data();
             const result = predictions[0] > 0.5 ? 'Pneumonia' : 'Normal';
 
-            // Display the result
-            resultDiv.innerText = `Prediction: ${result}`;
+              // Display the result
+            resultDiv.innerText = `Prediction: ${result}, Confidence: ${(confidence * 100).toFixed(2)}%`;
             predictButton.disabled = false; // Enable the button again
         }
     </script>
