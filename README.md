@@ -19,29 +19,24 @@ The project consists of the following key components:
 
 To get started with this project, follow these steps:
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/sebukpor/pnemonia-detction-model.git
-   cd your-repository-name
-   ```
 
-2. **Install dependencies**:
+1. **Install dependencies**:
    Ensure you have TensorFlow and TensorFlow.js installed. If you haven't already, you can install them using:
    ```bash
    pip install tensorflow
    npm install @tensorflow/tfjs
    ```
 
-3. **Convert the model to TensorFlow.js format**:
+2. **Convert the model to TensorFlow.js format**:
    If not already done, convert your trained model to TensorFlow.js format using:
    ```bash
    tensorflowjs_converter --input_format=tf_saved_model --output_format=tfjs_graph_model /path/to/saved_model /path/to/output_folder
    ```
 
-4. **Upload the model files to GitHub**:
+3. **Upload the model files to GitHub**:
    Upload the `model.json` and weight files into the `model` folder in your GitHub repository.
 
-5. **Deploy the Web Interface**:
+4. **Deploy the Web Interface**:
    - Edit the `index.html` file provided in this repository to customize your web interface if necessary.
    - Ensure the paths in the `index.html` correctly point to the `model.json` and weight files in the `model` folder.
 
