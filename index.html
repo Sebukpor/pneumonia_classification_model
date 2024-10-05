@@ -43,7 +43,7 @@
             font-weight: bold;
         }
 
-        #predict-button, #rotate-button, #zoom-in-button, #zoom-out-button, #view-3d-button {
+        #predict-button, #rotate-button, #zoom-in-button, #zoom-out-button, #view-3d-button, #back-to-2d-button {
             margin-top: 20px;
             padding: 10px 20px;
             font-size: 16px;
@@ -54,9 +54,13 @@
             cursor: pointer;
         }
 
-        #predict-button:disabled, #rotate-button:disabled, #zoom-in-button:disabled, #zoom-out-button:disabled, #view-3d-button:disabled {
+        #predict-button:disabled, #rotate-button:disabled, #zoom-in-button:disabled, #zoom-out-button:disabled, #view-3d-button:disabled, #back-to-2d-button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
+        }
+
+        #back-to-2d-button {
+            display: none; /* Initially hidden, shown in 3D view */
         }
     </style>
 </head>
@@ -70,6 +74,7 @@
     <button id="zoom-in-button" onclick="zoomImage(1.1)">Zoom In</button>
     <button id="zoom-out-button" onclick="zoomImage(0.9)">Zoom Out</button>
     <button id="view-3d-button" onclick="view3D()">View 3D</button>
+    <button id="back-to-2d-button" onclick="backTo2D()">Back to 2D</button>
 
     <div id="image-container">
         <canvas id="canvas" width="500" height="500"></canvas>
@@ -82,6 +87,7 @@
         let canvas = new fabric.Canvas('canvas');
         let imgInstance;
         let rotationAngle = 0;
+        let uploadedImageUrl = '';  // Store image URL for 3D mode
 
         // Load the TensorFlow model
         async function loadModel() {
@@ -94,7 +100,9 @@
         const imageUpload = document.getElementById('image-upload');
         const predictButton = document.getElementById('predict-button');
         const resultDiv = document.getElementById('result');
-        let uploadedImageUrl = '';
+        const view3DButton = document.getElementById('view-3d-button');
+        const backTo2DButton = document.getElementById('back-to-2d-button');
+        const imageContainer = document.getElementById('image-container');
 
         imageUpload.addEventListener('change', (event) => {
             const file = event.target.files[0];
@@ -158,14 +166,14 @@
 
         // Enhanced 3D Viewing function using three.js
         function view3D() {
-            const container = document.getElementById('image-container');
-            container.innerHTML = ''; // Clear the container for 3D view
+            // Clear the canvas and replace it with a 3D view
+            imageContainer.innerHTML = ''; // Clear the container for 3D view
 
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(75, 500 / 500, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer();
             renderer.setSize(500, 500);
-            container.appendChild(renderer.domElement);
+            imageContainer.appendChild(renderer.domElement);
 
             // Load the 2D image as a texture
             const texture = new THREE.TextureLoader().load(uploadedImageUrl);
@@ -185,6 +193,20 @@
                 renderer.render(scene, camera);
             }
             animate();
+
+            // Show the "Back to 2D" button and hide 3D-related buttons
+            view3DButton.style.display = 'none';
+            backTo2DButton.style.display = 'inline-block';
+        }
+
+        // Function to switch back to 2D view
+        function backTo2D() {
+            imageContainer.innerHTML = ''; // Clear the 3D view
+            imageContainer.appendChild(canvas.getElement()); // Re-insert the 2D canvas
+
+            // Show the 3D view button and hide the "Back to 2D" button
+            view3DButton.style.display = 'inline-block';
+            backTo2DButton.style.display = 'none';
         }
     </script>
 </body>
