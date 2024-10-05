@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pneumonia Detection - DAS medhub</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.4.0/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -24,15 +26,15 @@
         #image-container {
             margin-top: 20px;
             display: flex;
-            justify-content: center; /* Center the image horizontally */
-            align-items: center; /* Center the image vertically */
-            min-height: 500px; /* Minimum height to make the container larger */
+            justify-content: center;
+            align-items: center;
+            min-height: 500px;
+            border: 1px solid #ccc;
         }
 
         #uploaded-image {
-            max-width: 80%; /* Large enough to analyze but will scale based on the view */
-            max-height: 500px; /* Maximum height of the image */
-            display: none; /* Hide until image is uploaded */
+            max-width: 80%;
+            max-height: 500px;
         }
 
         #result {
@@ -41,8 +43,7 @@
             font-weight: bold;
         }
 
-        #predict-button {
-            display: none;
+        #predict-button, #rotate-button, #zoom-in-button, #zoom-out-button, #view-3d-button {
             margin-top: 20px;
             padding: 10px 20px;
             font-size: 16px;
@@ -53,7 +54,7 @@
             cursor: pointer;
         }
 
-        #predict-button:disabled {
+        #predict-button:disabled, #rotate-button:disabled, #zoom-in-button:disabled, #zoom-out-button:disabled, #view-3d-button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
         }
@@ -65,16 +66,24 @@
 
     <input type="file" id="image-upload" accept="image/*">
     <button id="predict-button" onclick="predict()">Predict</button>
+    <button id="rotate-button" onclick="rotateImage()">Rotate</button>
+    <button id="zoom-in-button" onclick="zoomImage(1.1)">Zoom In</button>
+    <button id="zoom-out-button" onclick="zoomImage(0.9)">Zoom Out</button>
+    <button id="view-3d-button" onclick="view3D()">View 3D</button>
 
     <div id="image-container">
-        <img id="uploaded-image" src="#" alt="Uploaded Image">
+        <canvas id="canvas" width="500" height="500"></canvas>
     </div>
 
     <div id="result"></div>
 
     <script>
         let model;
+        let canvas = new fabric.Canvas('canvas');
+        let imgInstance;
+        let rotationAngle = 0;
 
+        // Load the TensorFlow model
         async function loadModel() {
             model = await tf.loadGraphModel('model/model/model.json');
             console.log('Model loaded');
@@ -83,7 +92,6 @@
         loadModel();
 
         const imageUpload = document.getElementById('image-upload');
-        const uploadedImage = document.getElementById('uploaded-image');
         const predictButton = document.getElementById('predict-button');
         const resultDiv = document.getElementById('result');
 
@@ -91,27 +99,47 @@
             const file = event.target.files[0];
             const reader = new FileReader();
 
-            // Clear previous results when a new image is uploaded
+            // Clear previous results and reset canvas
             resultDiv.innerText = '';
-            predictButton.disabled = true; // Disable the button until the image is loaded
+            predictButton.disabled = true;
+            canvas.clear();
 
             reader.onload = function(e) {
-                uploadedImage.src = e.target.result;
-                uploadedImage.style.display = 'block';
-                predictButton.style.display = 'inline-block'; // Show the predict button
-                predictButton.disabled = false; // Enable the button after the image is displayed
+                fabric.Image.fromURL(e.target.result, function(img) {
+                    img.scaleToWidth(400);
+                    canvas.add(img);
+                    imgInstance = img;
+                    predictButton.disabled = false;
+                });
             };
-
             reader.readAsDataURL(file);
         });
 
+        // Function to rotate the image
+        function rotateImage() {
+            if (imgInstance) {
+                rotationAngle = (rotationAngle + 45) % 360;
+                imgInstance.rotate(rotationAngle);
+                canvas.renderAll();
+            }
+        }
+
+        // Function to zoom in/out the image
+        function zoomImage(factor) {
+            if (imgInstance) {
+                imgInstance.scale(imgInstance.scaleX * factor);
+                canvas.renderAll();
+            }
+        }
+
+        // Predict function
         async function predict() {
-            predictButton.disabled = true; // Disable the button during prediction
+            predictButton.disabled = true;
             resultDiv.innerText = 'Predicting...';
 
-            // Preprocess the image
-            const tensorImg = tf.browser.fromPixels(uploadedImage)
-                .resizeNearestNeighbor([150, 150]) // Resize to 150x150, which is the input size expected by the model
+            // Get the image data and preprocess
+            const tensorImg = tf.browser.fromPixels(canvas.getElement())
+                .resizeNearestNeighbor([150, 150])
                 .toFloat()
                 .expandDims(0)
                 .div(tf.scalar(255));
@@ -123,7 +151,32 @@
 
             // Display the result
             resultDiv.innerText = `Prediction: ${result}, Confidence: ${(confidence * 100).toFixed(2)}%`;
-            predictButton.disabled = false; // Enable the button again
+            predictButton.disabled = false;
+        }
+
+        // 3D Viewing function using three.js
+        function view3D() {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setSize(500, 500);
+            document.getElementById('image-container').appendChild(renderer.domElement);
+
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            const cube = new THREE.Mesh(geometry, material);
+            scene.add(cube);
+
+            camera.position.z = 5;
+
+            const animate = function () {
+                requestAnimationFrame(animate);
+                cube.rotation.x += 0.01;
+                cube.rotation.y += 0.01;
+                renderer.render(scene, camera);
+            };
+
+            animate();
         }
     </script>
 </body>
