@@ -94,6 +94,7 @@
         const imageUpload = document.getElementById('image-upload');
         const predictButton = document.getElementById('predict-button');
         const resultDiv = document.getElementById('result');
+        let uploadedImageUrl = '';
 
         imageUpload.addEventListener('change', (event) => {
             const file = event.target.files[0];
@@ -105,7 +106,8 @@
             canvas.clear();
 
             reader.onload = function(e) {
-                fabric.Image.fromURL(e.target.result, function(img) {
+                uploadedImageUrl = e.target.result; // Store the uploaded image URL
+                fabric.Image.fromURL(uploadedImageUrl, function(img) {
                     img.scaleToWidth(400);
                     canvas.add(img);
                     imgInstance = img;
@@ -154,28 +156,34 @@
             predictButton.disabled = false;
         }
 
-        // 3D Viewing function using three.js
+        // Enhanced 3D Viewing function using three.js
         function view3D() {
+            const container = document.getElementById('image-container');
+            container.innerHTML = ''; // Clear the container for 3D view
+
             const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const camera = new THREE.PerspectiveCamera(75, 500 / 500, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer();
             renderer.setSize(500, 500);
-            document.getElementById('image-container').appendChild(renderer.domElement);
+            container.appendChild(renderer.domElement);
 
-            const geometry = new THREE.BoxGeometry(1, 1, 1);
-            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-            const cube = new THREE.Mesh(geometry, material);
-            scene.add(cube);
+            // Load the 2D image as a texture
+            const texture = new THREE.TextureLoader().load(uploadedImageUrl);
+            
+            // Create a plane geometry and apply the texture
+            const geometry = new THREE.PlaneGeometry(4, 4);  // Size of the plane
+            const material = new THREE.MeshBasicMaterial({ map: texture });
+            const plane = new THREE.Mesh(geometry, material);
+            scene.add(plane);
 
             camera.position.z = 5;
 
-            const animate = function () {
+            // 3D animation loop
+            function animate() {
                 requestAnimationFrame(animate);
-                cube.rotation.x += 0.01;
-                cube.rotation.y += 0.01;
+                plane.rotation.y += 0.01;  // Rotate the plane around the Y axis
                 renderer.render(scene, camera);
-            };
-
+            }
             animate();
         }
     </script>
