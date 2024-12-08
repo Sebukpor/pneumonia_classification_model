@@ -5,208 +5,147 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pneumonia Detection - DAS medhub</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.4.0/fabric.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-        }
-
-        h1 {
-            color: #FFA500; /* Orange for DAS */
-            display: inline;
-        }
-
-        h1 span {
-            color: #008000; /* Green for medhub */
-        }
-
-        #image-container {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 500px;
-            border: 1px solid #ccc;
-        }
-
-        #uploaded-image {
-            max-width: 80%;
-            max-height: 500px;
-        }
-
-        #result {
-            margin-top: 20px;
-            font-size: 1.5em;
-            font-weight: bold;
-        }
-
-        #predict-button, #rotate-button, #zoom-in-button, #zoom-out-button, #view-3d-button, #back-to-2d-button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #predict-button:disabled, #rotate-button:disabled, #zoom-in-button:disabled, #zoom-out-button:disabled, #view-3d-button:disabled, #back-to-2d-button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        #back-to-2d-button {
-            display: none; /* Initially hidden, shown in 3D view */
-        }
+        /* Add your CSS styling here */
     </style>
 </head>
 <body>
     <h1>DAS <span>medhub</span></h1>
-    <h2>Pneumonia Detection using Chest X-Ray Images</h2>
+    <h2>Pneumonia Classification from Chest X-Rays</h2>
 
     <input type="file" id="image-upload" accept="image/*">
     <button id="predict-button" onclick="predict()">Predict</button>
-    <button id="rotate-button" onclick="rotateImage()">Rotate</button>
-    <button id="zoom-in-button" onclick="zoomImage(1.1)">Zoom In</button>
-    <button id="zoom-out-button" onclick="zoomImage(0.9)">Zoom Out</button>
-    <button id="view-3d-button" onclick="view3D()">View 3D</button>
-    <button id="back-to-2d-button" onclick="backTo2D()">Back to 2D</button>
 
     <div id="image-container">
-        <canvas id="canvas" width="500" height="500"></canvas>
+        <img id="uploaded-image" src="#" alt="Uploaded Image">
     </div>
 
     <div id="result"></div>
+    <div id="azure-findings"></div>
+
+    <form id="demographics-form">
+        <h3>Enter Demographics</h3>
+        <input type="text" id="name" placeholder="Name" required>
+        <input type="text" id="id" placeholder="Patient ID" required>
+        <input type="number" id="age" placeholder="Age" required>
+        <select id="gender">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+        </select>
+        <button type="button" onclick="downloadPDF()">Download as PDF</button>
+    </form>
 
     <script>
         let model;
-        let canvas = new fabric.Canvas('canvas');
-        let imgInstance;
-        let rotationAngle = 0;
-        let uploadedImageUrl = '';  // Store image URL for 3D mode
+        let findingsDescription = '';
 
-        // Load the TensorFlow model
+        // Azure API details
+        const endpoint = 'https://custom-description.cognitiveservices.azure.com/';
+        const subscriptionKey = 'BeaAvJ9CHPetRqS4c1vLLTQVWDcj6IIGaz9i3mYdlsbxC1BWUlTAJQQJ99ALACYeBjFXJ3w3AAAFACOGVPO9';
+
+        // Load TensorFlow.js model
         async function loadModel() {
-            model = await tf.loadGraphModel('model/model/model.json');
-            console.log('Model loaded');
+            try {
+                model = await tf.loadGraphModel('model/model.json');
+                console.log('Model loaded successfully');
+            } catch (error) {
+                console.error('Error loading model:', error);
+            }
         }
-
         loadModel();
 
         const imageUpload = document.getElementById('image-upload');
+        const uploadedImage = document.getElementById('uploaded-image');
         const predictButton = document.getElementById('predict-button');
         const resultDiv = document.getElementById('result');
-        const view3DButton = document.getElementById('view-3d-button');
-        const backTo2DButton = document.getElementById('back-to-2d-button');
-        const imageContainer = document.getElementById('image-container');
+        const findingsDiv = document.getElementById('azure-findings');
 
         imageUpload.addEventListener('change', (event) => {
             const file = event.target.files[0];
             const reader = new FileReader();
 
-            // Clear previous results and reset canvas
-            resultDiv.innerText = '';
-            predictButton.disabled = true;
-            canvas.clear();
-
             reader.onload = function(e) {
-                uploadedImageUrl = e.target.result; // Store the uploaded image URL
-                fabric.Image.fromURL(uploadedImageUrl, function(img) {
-                    img.scaleToWidth(400);
-                    canvas.add(img);
-                    imgInstance = img;
-                    predictButton.disabled = false;
-                });
+                uploadedImage.src = e.target.result;
+                uploadedImage.style.display = 'block';
+                predictButton.style.display = 'inline-block';
+                predictButton.disabled = false;
             };
+
             reader.readAsDataURL(file);
         });
 
-        // Function to rotate the image
-        function rotateImage() {
-            if (imgInstance) {
-                rotationAngle = (rotationAngle + 45) % 360;
-                imgInstance.rotate(rotationAngle);
-                canvas.renderAll();
-            }
-        }
-
-        // Function to zoom in/out the image
-        function zoomImage(factor) {
-            if (imgInstance) {
-                imgInstance.scale(imgInstance.scaleX * factor);
-                canvas.renderAll();
-            }
-        }
-
-        // Predict function
         async function predict() {
             predictButton.disabled = true;
             resultDiv.innerText = 'Predicting...';
 
-            // Get the image data and preprocess
-            const tensorImg = tf.browser.fromPixels(canvas.getElement())
-                .resizeNearestNeighbor([150, 150])
-                .toFloat()
-                .expandDims(0)
-                .div(tf.scalar(255));
+            try {
+                const tensorImg = tf.browser.fromPixels(uploadedImage)
+                    .resizeNearestNeighbor([224, 224])
+                    .toFloat()
+                    .expandDims(0)
+                    .div(tf.scalar(255));
 
-            // Make the prediction
-            const predictions = await model.predict(tensorImg).data();
-            const result = predictions[0] > 0.5 ? 'Pneumonia' : 'Normal';
-            const confidence = predictions[0]; // Confidence is predictions[0]
+                const predictions = await model.predict(tensorImg).data();
 
-            // Display the result
-            resultDiv.innerText = `Prediction: ${result}, Confidence: ${(confidence * 100).toFixed(2)}%`;
+                const isInfected = predictions[0] <= 0.5;
+                const confidence = isInfected ? (1 - predictions[0]) * 100 : predictions[0] * 100;
+                const result = isInfected ? 'Normal' : 'Pneumonia';
+
+                resultDiv.innerText = `Prediction: ${result} (${confidence.toFixed(2)}% confidence)`;
+
+                // Get findings from Azure Vision
+                await getAzureDescription(uploadedImage.src);
+            } catch (error) {
+                console.error('Error during prediction:', error);
+                resultDiv.innerText = 'Error during prediction. Please try again later.';
+            }
             predictButton.disabled = false;
         }
 
-        // Enhanced 3D Viewing function using three.js
-        function view3D() {
-            // Clear the canvas and replace it with a 3D view
-            imageContainer.innerHTML = ''; // Clear the container for 3D view
+        async function getAzureDescription(imageData) {
+            const imageBlob = await fetch(imageData).then(res => res.blob());
 
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, 500 / 500, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer();
-            renderer.setSize(500, 500);
-            imageContainer.appendChild(renderer.domElement);
+            const response = await fetch(endpoint + 'vision/v3.2/describe', {
+                method: 'POST',
+                headers: {
+                    'Ocp-Apim-Subscription-Key': subscriptionKey,
+                    'Content-Type': 'application/octet-stream'
+                },
+                body: imageBlob
+            });
 
-            // Load the 2D image as a texture
-            const texture = new THREE.TextureLoader().load(uploadedImageUrl);
-            
-            // Create a plane geometry and apply the texture
-            const geometry = new THREE.PlaneGeometry(4, 4);  // Size of the plane
-            const material = new THREE.MeshBasicMaterial({ map: texture });
-            const plane = new THREE.Mesh(geometry, material);
-            scene.add(plane);
+            const data = await response.json();
 
-            camera.position.z = 5;
-
-            // 3D animation loop
-            function animate() {
-                requestAnimationFrame(animate);
-                plane.rotation.y += 0.01;  // Rotate the plane around the Y axis
-                renderer.render(scene, camera);
+            if (data?.description?.captions?.length > 0) {
+                findingsDescription = data.description.captions[0].text;
+                findingsDiv.innerText = `Azure Findings: ${findingsDescription}`;
+            } else {
+                findingsDiv.innerText = 'No findings from Azure.';
             }
-            animate();
-
-            // Show the "Back to 2D" button and hide 3D-related buttons
-            view3DButton.style.display = 'none';
-            backTo2DButton.style.display = 'inline-block';
         }
 
-        // Function to switch back to 2D view
-        function backTo2D() {
-            imageContainer.innerHTML = ''; // Clear the 3D view
-            imageContainer.appendChild(canvas.getElement()); // Re-insert the 2D canvas
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
 
-            // Show the 3D view button and hide the "Back to 2D" button
-            view3DButton.style.display = 'inline-block';
-            backTo2DButton.style.display = 'none';
+            const name = document.getElementById('name').value;
+            const id = document.getElementById('id').value;
+            const age = document.getElementById('age').value;
+            const gender = document.getElementById('gender').value;
+
+            const pdf = new jsPDF();
+            pdf.text(10, 10, `Name: ${name}`);
+            pdf.text(10, 20, `Patient ID: ${id}`);
+            pdf.text(10, 30, `Age: ${age}`);
+            pdf.text(10, 40, `Gender: ${gender}`);
+            pdf.text(10, 50, resultDiv.innerText);
+            pdf.text(10, 60, `Azure Findings: ${findingsDescription}`);
+
+            const imgData = uploadedImage.src;
+            pdf.addImage(imgData, 'JPEG', 10, 70, 100, 100);
+
+            pdf.save('pneumonia_result.pdf');
         }
     </script>
 </body>
