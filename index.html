@@ -6,8 +6,88 @@
     <title>Pneumonia Detection - DAS medhub</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-    <style>
-        /* Add your CSS styling here */
+  <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+            background-color: #f4f6f8;
+        }
+
+        h1 {
+            color: #FFA500; /* Orange for DAS */
+            display: inline;
+        }
+
+        h1 span {
+            color: #008000; /* Green for medhub */
+        }
+
+        #image-container {
+            margin-top: 20px;
+            position: relative;
+            display: inline-block;
+        }
+
+        #uploaded-image {
+            max-width: 300px;
+            display: none;
+            transition: transform 0.3s ease;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        #controls {
+            margin-top: 10px;
+        }
+
+        #controls button {
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #predict-button {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #predict-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #demographics-form {
+            display: none;
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        #demographics-form input, #demographics-form button {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 14px;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -48,7 +128,7 @@
         // Load TensorFlow.js model
         async function loadModel() {
             try {
-                model = await tf.loadGraphModel('model/model.json');
+                model = await tf.loadGraphModel('model/model/model.json');
                 console.log('Model loaded successfully');
             } catch (error) {
                 console.error('Error loading model:', error);
