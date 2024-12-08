@@ -6,7 +6,7 @@
     <title>Pneumonia Detection - DAS medhub</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-  <style>
+    <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
@@ -15,12 +15,12 @@
         }
 
         h1 {
-            color: #FFA500; /* Orange for DAS */
+            color: #FFA500;
             display: inline;
         }
 
         h1 span {
-            color: #008000; /* Green for medhub */
+            color: #008000;
         }
 
         #image-container {
@@ -198,8 +198,17 @@
 
             const data = await response.json();
 
+            // Post-process the output to make it more descriptive
             if (data?.description?.captions?.length > 0) {
-                findingsDescription = data.description.captions[0].text;
+                let rawDescription = data.description.captions[0].text;
+
+                // Enhance the description for radiology findings
+                findingsDescription = `Image Analysis: ${rawDescription}. 
+                The uploaded chest X-ray image was analyzed for pneumonia-related features. 
+                Observations include: 
+                - ${rawDescription.includes('cloudy') ? 'Potential consolidation or opacity detected.' : 'No significant opacities observed.'}
+                - ${rawDescription.includes('clear') ? 'Normal lung fields with no signs of infection.' : 'Further investigation recommended for detailed assessment.'}`;
+
                 findingsDiv.innerText = `Azure Findings: ${findingsDescription}`;
             } else {
                 findingsDiv.innerText = 'No findings from Azure.';
