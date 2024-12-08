@@ -162,7 +162,7 @@
 
             try {
                 const tensorImg = tf.browser.fromPixels(uploadedImage)
-                    .resizeNearestNeighbor([224, 224])
+                    .resizeNearestNeighbor([150, 150])
                     .toFloat()
                     .expandDims(0)
                     .div(tf.scalar(255));
