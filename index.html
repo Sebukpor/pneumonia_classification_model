@@ -3,135 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pneumonia Detection - DAS Medhub</title>
+    <title>Pneumonia Detection</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-            background-color: #f4f6f8;
-        }
-
-        h1 {
-            color: #FFA500;
-            display: inline;
-        }
-
-        h1 span {
-            color: #008000;
-        }
-
-        #image-container {
-            margin-top: 20px;
-            position: relative;
-            display: inline-block;
-        }
-
         #uploaded-image {
-            max-width: 300px;
             display: none;
-            transition: transform 0.3s ease;
-        }
-
-        #result {
+            max-width: 100%;
             margin-top: 20px;
-            font-size: 1.5em;
-            font-weight: bold;
         }
-
-        #controls {
-            margin-top: 10px;
-        }
-
-        #controls button {
-            margin: 5px;
-            padding: 10px 15px;
-            font-size: 14px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-        }
-
         #predict-button {
             display: none;
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
         }
-
-        #predict-button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
         #demographics-form {
             display: none;
             margin-top: 20px;
-            background-color: #fff;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            max-width: 350px;
-            margin: 0 auto;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        #demographics-form input, 
-        #demographics-form button, 
-        #demographics-form select {
-            margin: 10px 0;
-            padding: 10px;
-            font-size: 14px;
-            width: 100%;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-
-        #demographics-form button {
-            background-color: #007BFF;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        #demographics-form button:hover {
-            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
-    <h1>DAS <span>Medhub</span></h1>
-    <h2>Pneumonia Classification from Chest X-Rays</h2>
-
+    <h1>Pneumonia Detection</h1>
     <input type="file" id="image-upload" accept="image/*">
+    <img id="uploaded-image" alt="Uploaded Image">
     <button id="predict-button" onclick="predict()">Predict</button>
-
-    <div id="image-container">
-        <img id="uploaded-image" src="#" alt="Uploaded Image">
-    </div>
 
     <div id="result"></div>
     <div id="azure-findings"></div>
 
     <form id="demographics-form">
-        <h3>Enter Demographics</h3>
-        <input type="text" id="name" placeholder="Name" required>
-        <input type="text" id="id" placeholder="Patient ID" required>
-        <input type="number" id="age" placeholder="Age" required>
+        <h2>Patient Details</h2>
+        <label for="name">Name:</label>
+        <input type="text" id="name" required>
+        <br>
+        <label for="id">Patient ID:</label>
+        <input type="text" id="id" required>
+        <br>
+        <label for="age">Age:</label>
+        <input type="number" id="age" required>
+        <br>
+        <label for="gender">Gender:</label>
         <select id="gender">
             <option value="Male">Male</option>
             <option value="Female">Female</option>
             <option value="Other">Other</option>
         </select>
-        <button type="button" onclick="downloadPDF()">Download as PDF</button>
+        <br>
+        <button type="button" onclick="downloadPDF()">Download PDF</button>
     </form>
 
     <script>
@@ -189,46 +106,44 @@
 
                 resultDiv.innerText = `Prediction: ${result} (${confidence.toFixed(2)}% confidence)`;
 
-                  // Provide detailed manual findings
                 let manualFindings = '';
                 if (result === 'Pneumonia') {
                     if (confidence >= 90) {
-                        manualFindings = 
+                        manualFindings = `
                             - The X-ray indicates strong evidence of pneumonia. 
-                            - Observed features may include significant opacities or consolidation in lung fields.
-                            - Immediate medical intervention is recommended.;
+                            - Observed features include significant opacities or consolidation in lung fields.
+                            - Immediate medical intervention is recommended.`;
                     } else if (confidence >= 70) {
-                        manualFindings = 
+                        manualFindings = `
                             - Signs of pneumonia are evident but not highly conclusive.
                             - Slight opacities or clouding may suggest early stages of infection.
-                            - Further testing and monitoring are advised.;
+                            - Further testing and monitoring are advised.`;
                     } else {
-                        manualFindings = 
+                        manualFindings = `
                             - Minimal evidence of pneumonia detected.
                             - Observations suggest mild abnormalities, potentially non-pneumonia related.
-                            - Follow-up imaging is recommended to confirm diagnosis.;
+                            - Follow-up imaging is recommended to confirm diagnosis.`;
                     }
                 } else if (result === 'Normal') {
                     if (confidence >= 90) {
-                        manualFindings = 
+                        manualFindings = `
                             - The chest X-ray appears normal with no significant abnormalities detected.
                             - Clear lung fields with no signs of infection or consolidation.
-                            - Routine check-ups are advised to maintain good health.;
+                            - Routine check-ups are advised to maintain good health.`;
                     } else if (confidence >= 70) {
-                        manualFindings = 
+                        manualFindings = `
                             - The X-ray appears normal; however, the confidence is moderate.
-                            - No significant findings, but further observation may be considered for precautionary measures.;
+                            - No significant findings, but further observation may be considered for precautionary measures.`;
                     } else {
-                        manualFindings = 
+                        manualFindings = `
                             - The X-ray suggests normal results, but with lower confidence.
-                            - Consider additional tests if the patient exhibits symptoms.;
+                            - Consider additional tests if the patient exhibits symptoms.`;
                     }
                 }
 
-                findingsDiv.innerText = Detailed Findings: ${manualFindings};
+                findingsDiv.innerText = `Detailed Findings: ${manualFindings.trim()}`;
 
-                const demographicsForm = document.getElementById('demographics-form');
-                demographicsForm.style.display = 'block';
+                document.getElementById('demographics-form').style.display = 'block';
             } catch (error) {
                 console.error('Error during prediction:', error);
                 resultDiv.innerText = 'Error during prediction. Please try again later.';
