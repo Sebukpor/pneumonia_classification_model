@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pneumonia Detection - DAS medhub</title>
+    <title>Pneumonia Detection - DAS Medhub</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <style>
@@ -91,7 +91,7 @@
     </style>
 </head>
 <body>
-    <h1>DAS <span>medhub</span></h1>
+    <h1>DAS <span>Medhub</span></h1>
     <h2>Pneumonia Classification from Chest X-Rays</h2>
 
     <input type="file" id="image-upload" accept="image/*">
@@ -119,11 +119,6 @@
 
     <script>
         let model;
-        let findingsDescription = '';
-
-        // Azure API details
-        const endpoint = 'https://custom-description.cognitiveservices.azure.com/';
-        const subscriptionKey = 'BeaAvJ9CHPetRqS4c1vLLTQVWDcj6IIGaz9i3mYdlsbxC1BWUlTAJQQJ99ALACYeBjFXJ3w3AAAFACOGVPO9';
 
         // Load TensorFlow.js model
         async function loadModel() {
@@ -175,44 +170,48 @@
 
                 resultDiv.innerText = `Prediction: ${result} (${confidence.toFixed(2)}% confidence)`;
 
-                // Get findings from Azure Vision
-                await getAzureDescription(uploadedImage.src);
+                // Provide detailed manual findings
+                let manualFindings = '';
+                if (result === 'Pneumonia') {
+                    if (confidence >= 90) {
+                        manualFindings = `
+                            - The X-ray indicates strong evidence of pneumonia. 
+                            - Observed features may include significant opacities or consolidation in lung fields.
+                            - Immediate medical intervention is recommended.`;
+                    } else if (confidence >= 70) {
+                        manualFindings = `
+                            - Signs of pneumonia are evident but not highly conclusive.
+                            - Slight opacities or clouding may suggest early stages of infection.
+                            - Further testing and monitoring are advised.`;
+                    } else {
+                        manualFindings = `
+                            - Minimal evidence of pneumonia detected.
+                            - Observations suggest mild abnormalities, potentially non-pneumonia related.
+                            - Follow-up imaging is recommended to confirm diagnosis.`;
+                    }
+                } else if (result === 'Normal') {
+                    if (confidence >= 90) {
+                        manualFindings = `
+                            - The chest X-ray appears normal with no significant abnormalities detected.
+                            - Clear lung fields with no signs of infection or consolidation.
+                            - Routine check-ups are advised to maintain good health.`;
+                    } else if (confidence >= 70) {
+                        manualFindings = `
+                            - The X-ray appears normal; however, the confidence is moderate.
+                            - No significant findings, but further observation may be considered for precautionary measures.`;
+                    } else {
+                        manualFindings = `
+                            - The X-ray suggests normal results, but with lower confidence.
+                            - Consider additional tests if the patient exhibits symptoms.`;
+                    }
+                }
+
+                findingsDiv.innerText = `Detailed Findings: ${manualFindings}`;
             } catch (error) {
                 console.error('Error during prediction:', error);
                 resultDiv.innerText = 'Error during prediction. Please try again later.';
             }
             predictButton.disabled = false;
-        }
-
-        async function getAzureDescription(imageData) {
-            const imageBlob = await fetch(imageData).then(res => res.blob());
-
-            const response = await fetch(endpoint + 'vision/v3.2/describe', {
-                method: 'POST',
-                headers: {
-                    'Ocp-Apim-Subscription-Key': subscriptionKey,
-                    'Content-Type': 'application/octet-stream'
-                },
-                body: imageBlob
-            });
-
-            const data = await response.json();
-
-            // Post-process the output to make it more descriptive
-            if (data?.description?.captions?.length > 0) {
-                let rawDescription = data.description.captions[0].text;
-
-                // Enhance the description for radiology findings
-                findingsDescription = `Image Analysis: ${rawDescription}. 
-                The uploaded chest X-ray image was analyzed for pneumonia-related features. 
-                Observations include: 
-                - ${rawDescription.includes('cloudy') ? 'Potential consolidation or opacity detected.' : 'No significant opacities observed.'}
-                - ${rawDescription.includes('clear') ? 'Normal lung fields with no signs of infection.' : 'Further investigation recommended for detailed assessment.'}`;
-
-                findingsDiv.innerText = `Azure Findings: ${findingsDescription}`;
-            } else {
-                findingsDiv.innerText = 'No findings from Azure.';
-            }
         }
 
         function downloadPDF() {
@@ -229,7 +228,7 @@
             pdf.text(10, 30, `Age: ${age}`);
             pdf.text(10, 40, `Gender: ${gender}`);
             pdf.text(10, 50, resultDiv.innerText);
-            pdf.text(10, 60, `Azure Findings: ${findingsDescription}`);
+            pdf.text(10, 60, findingsDiv.innerText);
 
             const imgData = uploadedImage.src;
             pdf.addImage(imgData, 'JPEG', 10, 70, 100, 100);
