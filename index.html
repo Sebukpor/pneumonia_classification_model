@@ -77,16 +77,33 @@
             background-color: #fff;
             padding: 20px;
             border: 1px solid #ccc;
-            border-radius: 5px;
-            max-width: 300px;
+            border-radius: 10px;
+            max-width: 350px;
             margin: 0 auto;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
-        #demographics-form input, #demographics-form button {
+        #demographics-form input, 
+        #demographics-form button, 
+        #demographics-form select {
             margin: 10px 0;
             padding: 10px;
             font-size: 14px;
             width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        #demographics-form button {
+            background-color: #007BFF;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #demographics-form button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
@@ -120,7 +137,6 @@
     <script>
         let model;
 
-        // Load TensorFlow.js model
         async function loadModel() {
             try {
                 model = await tf.loadGraphModel('model/model/model.json');
@@ -138,91 +154,87 @@
         const findingsDiv = document.getElementById('azure-findings');
 
         imageUpload.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    const reader = new FileReader();
+            const file = event.target.files[0];
+            const reader = new FileReader();
 
-    // Clear previous findings and predictions
-    resultDiv.innerText = '';
-    findingsDiv.innerText = '';
+            resultDiv.innerText = '';
+            findingsDiv.innerText = '';
 
-    reader.onload = function(e) {
-        uploadedImage.src = e.target.result;
-        uploadedImage.style.display = 'block';
-        predictButton.style.display = 'inline-block';
-        predictButton.disabled = false;
-    };
+            reader.onload = function(e) {
+                uploadedImage.src = e.target.result;
+                uploadedImage.style.display = 'block';
+                predictButton.style.display = 'inline-block';
+                predictButton.disabled = false;
+            };
 
-    reader.readAsDataURL(file);
-});
-               
+            reader.readAsDataURL(file);
+        });
+
         async function predict() {
-    predictButton.disabled = true;
-    resultDiv.innerText = 'Predicting...';
+            predictButton.disabled = true;
+            resultDiv.innerText = 'Predicting...';
 
-    try {
-        const tensorImg = tf.browser.fromPixels(uploadedImage)
-            .resizeNearestNeighbor([150, 150])
-            .toFloat()
-            .expandDims(0)
-            .div(tf.scalar(255));
+            try {
+                const tensorImg = tf.browser.fromPixels(uploadedImage)
+                    .resizeNearestNeighbor([150, 150])
+                    .toFloat()
+                    .expandDims(0)
+                    .div(tf.scalar(255));
 
-        const predictions = await model.predict(tensorImg).data();
+                const predictions = await model.predict(tensorImg).data();
 
-        const isInfected = predictions[0] <= 0.5;
-        const confidence = isInfected ? (1 - predictions[0]) * 100 : predictions[0] * 100;
-        const result = isInfected ? 'Normal' : 'Pneumonia';
+                const isInfected = predictions[0] <= 0.5;
+                const confidence = isInfected ? (1 - predictions[0]) * 100 : predictions[0] * 100;
+                const result = isInfected ? 'Normal' : 'Pneumonia';
 
-        resultDiv.innerText = `Prediction: ${result} (${confidence.toFixed(2)}% confidence)`;
+                resultDiv.innerText = `Prediction: ${result} (${confidence.toFixed(2)}% confidence)`;
 
-          // Provide detailed manual findings
+                  // Provide detailed manual findings
                 let manualFindings = '';
                 if (result === 'Pneumonia') {
                     if (confidence >= 90) {
-                        manualFindings = `
+                        manualFindings = 
                             - The X-ray indicates strong evidence of pneumonia. 
                             - Observed features may include significant opacities or consolidation in lung fields.
-                            - Immediate medical intervention is recommended.`;
+                            - Immediate medical intervention is recommended.;
                     } else if (confidence >= 70) {
-                        manualFindings = `
+                        manualFindings = 
                             - Signs of pneumonia are evident but not highly conclusive.
                             - Slight opacities or clouding may suggest early stages of infection.
-                            - Further testing and monitoring are advised.`;
+                            - Further testing and monitoring are advised.;
                     } else {
-                        manualFindings = `
+                        manualFindings = 
                             - Minimal evidence of pneumonia detected.
                             - Observations suggest mild abnormalities, potentially non-pneumonia related.
-                            - Follow-up imaging is recommended to confirm diagnosis.`;
+                            - Follow-up imaging is recommended to confirm diagnosis.;
                     }
                 } else if (result === 'Normal') {
                     if (confidence >= 90) {
-                        manualFindings = `
+                        manualFindings = 
                             - The chest X-ray appears normal with no significant abnormalities detected.
                             - Clear lung fields with no signs of infection or consolidation.
-                            - Routine check-ups are advised to maintain good health.`;
+                            - Routine check-ups are advised to maintain good health.;
                     } else if (confidence >= 70) {
-                        manualFindings = `
+                        manualFindings = 
                             - The X-ray appears normal; however, the confidence is moderate.
-                            - No significant findings, but further observation may be considered for precautionary measures.`;
+                            - No significant findings, but further observation may be considered for precautionary measures.;
                     } else {
-                        manualFindings = `
+                        manualFindings = 
                             - The X-ray suggests normal results, but with lower confidence.
-                            - Consider additional tests if the patient exhibits symptoms.`;
+                            - Consider additional tests if the patient exhibits symptoms.;
                     }
                 }
 
-                findingsDiv.innerText = `Detailed Findings: ${manualFindings}`;
-            
+                findingsDiv.innerText = Detailed Findings: ${manualFindings};
 
-        // Show demographics form after prediction
-        const demographicsForm = document.getElementById('demographics-form');
-        demographicsForm.style.display = 'block';
-    } catch (error) {
-        console.error('Error during prediction:', error);
-        resultDiv.innerText = 'Error during prediction. Please try again later.';
-    }
-    predictButton.disabled = false;
-}
-
+                const demographicsForm = document.getElementById('demographics-form');
+                demographicsForm.style.display = 'block';
+            } catch (error) {
+                console.error('Error during prediction:', error);
+                resultDiv.innerText = 'Error during prediction. Please try again later.';
+            }
+            predictButton.disabled = false;
+        }
 
         function downloadPDF() {
             const { jsPDF } = window.jspdf;
@@ -233,15 +245,19 @@
             const gender = document.getElementById('gender').value;
 
             const pdf = new jsPDF();
-            pdf.text(10, 10, `Name: ${name}`);
-            pdf.text(10, 20, `Patient ID: ${id}`);
-            pdf.text(10, 30, `Age: ${age}`);
-            pdf.text(10, 40, `Gender: ${gender}`);
-            pdf.text(10, 50, resultDiv.innerText);
-            pdf.text(10, 60, findingsDiv.innerText);
+            pdf.setFontSize(20);
+            pdf.text('DAS Medhub', 105, 10, { align: 'center' });
+
+            pdf.setFontSize(12);
+            pdf.text(10, 30, `Name: ${name}`);
+            pdf.text(10, 40, `Patient ID: ${id}`);
+            pdf.text(10, 50, `Age: ${age}`);
+            pdf.text(10, 60, `Gender: ${gender}`);
+            pdf.text(10, 70, resultDiv.innerText);
+            pdf.text(10, 80, findingsDiv.innerText, { maxWidth: 180 });
 
             const imgData = uploadedImage.src;
-            pdf.addImage(imgData, 'JPEG', 10, 70, 100, 100);
+            pdf.addImage(imgData, 'JPEG', 10, 100, 180, 100);
 
             pdf.save('pneumonia_result.pdf');
         }
