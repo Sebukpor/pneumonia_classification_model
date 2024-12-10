@@ -3,21 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pneumonia Detection</title>
+    <title>Pneumonia Detection - DAS Medhub</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <style>
-        #uploaded-image {
-            display: none;
-            max-width: 100%;
-            margin-top: 20px;
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+            background-color: #f4f6f8;
         }
+
+        h1 {
+            color: #FFA500;
+            display: inline;
+        }
+
+        h1 span {
+            color: #008000;
+        }
+
+        #image-container {
+            margin-top: 20px;
+            position: relative;
+            display: inline-block;
+        }
+
+        #uploaded-image {
+            max-width: 300px;
+            display: none;
+            transition: transform 0.3s ease;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        #controls {
+            margin-top: 10px;
+        }
+
+        #controls button {
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+
         #predict-button {
             display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
+
+        #predict-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
         #demographics-form {
             display: none;
             margin-top: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            max-width: 350px;
+            margin: 0 auto;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #demographics-form input, 
+        #demographics-form button, 
+        #demographics-form select {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 14px;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        #demographics-form button {
+            background-color: #007BFF;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #demographics-form button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
