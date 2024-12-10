@@ -154,28 +154,27 @@
 
     reader.readAsDataURL(file);
 });
-
-
+               
         async function predict() {
-            predictButton.disabled = true;
-            resultDiv.innerText = 'Predicting...';
+    predictButton.disabled = true;
+    resultDiv.innerText = 'Predicting...';
 
-            try {
-                const tensorImg = tf.browser.fromPixels(uploadedImage)
-                    .resizeNearestNeighbor([150, 150])
-                    .toFloat()
-                    .expandDims(0)
-                    .div(tf.scalar(255));
+    try {
+        const tensorImg = tf.browser.fromPixels(uploadedImage)
+            .resizeNearestNeighbor([150, 150])
+            .toFloat()
+            .expandDims(0)
+            .div(tf.scalar(255));
 
-                const predictions = await model.predict(tensorImg).data();
+        const predictions = await model.predict(tensorImg).data();
 
-                const isInfected = predictions[0] <= 0.5;
-                const confidence = isInfected ? (1 - predictions[0]) * 100 : predictions[0] * 100;
-                const result = isInfected ? 'Normal' : 'Pneumonia';
+        const isInfected = predictions[0] <= 0.5;
+        const confidence = isInfected ? (1 - predictions[0]) * 100 : predictions[0] * 100;
+        const result = isInfected ? 'Normal' : 'Pneumonia';
 
-                resultDiv.innerText = `Prediction: ${result} (${confidence.toFixed(2)}% confidence)`;
+        resultDiv.innerText = `Prediction: ${result} (${confidence.toFixed(2)}% confidence)`;
 
-                // Provide detailed manual findings
+          // Provide detailed manual findings
                 let manualFindings = '';
                 if (result === 'Pneumonia') {
                     if (confidence >= 90) {
@@ -212,12 +211,18 @@
                 }
 
                 findingsDiv.innerText = `Detailed Findings: ${manualFindings}`;
-            } catch (error) {
-                console.error('Error during prediction:', error);
-                resultDiv.innerText = 'Error during prediction. Please try again later.';
-            }
-            predictButton.disabled = false;
-        }
+            
+
+        // Show demographics form after prediction
+        const demographicsForm = document.getElementById('demographics-form');
+        demographicsForm.style.display = 'block';
+    } catch (error) {
+        console.error('Error during prediction:', error);
+        resultDiv.innerText = 'Error during prediction. Please try again later.';
+    }
+    predictButton.disabled = false;
+}
+
 
         function downloadPDF() {
             const { jsPDF } = window.jspdf;
