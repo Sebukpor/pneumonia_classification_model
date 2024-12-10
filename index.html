@@ -138,18 +138,23 @@
         const findingsDiv = document.getElementById('azure-findings');
 
         imageUpload.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            const reader = new FileReader();
+    const file = event.target.files[0];
+    const reader = new FileReader();
 
-            reader.onload = function(e) {
-                uploadedImage.src = e.target.result;
-                uploadedImage.style.display = 'block';
-                predictButton.style.display = 'inline-block';
-                predictButton.disabled = false;
-            };
+    // Clear previous findings and predictions
+    resultDiv.innerText = '';
+    findingsDiv.innerText = '';
 
-            reader.readAsDataURL(file);
-        });
+    reader.onload = function(e) {
+        uploadedImage.src = e.target.result;
+        uploadedImage.style.display = 'block';
+        predictButton.style.display = 'inline-block';
+        predictButton.disabled = false;
+    };
+
+    reader.readAsDataURL(file);
+});
+
 
         async function predict() {
             predictButton.disabled = true;
